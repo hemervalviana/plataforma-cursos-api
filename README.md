@@ -1,7 +1,7 @@
 # Plataforma de Cursos - API
 
 ## Objetivo
-API REST desenvolvida em .NET 8 para gerenciamento de cursos, estudantes e matrículas, com autenticação JWT e controle de acesso por papéis.
+API REST em .NET 8 para gerenciamento de cursos, estudantes e matrículas, com autenticação JWT e controle de acesso por papéis.
 
 ## Tecnologias
 - .NET 8
@@ -19,72 +19,86 @@ API REST desenvolvida em .NET 8 para gerenciamento de cursos, estudantes e matr�
 ```bash
 dotnet restore
 dotnet run
-
-Acesse:
+```
+## Acesse Swagger:
+```bash
 https://localhost:7293/swagger
+```
 
-Configurações
+## Configurações
 
-As configurações sensíveis são definidas via variáveis de ambiente ou User Secrets.
+Variáveis sensíveis via User Secrets ou environment variables (ex.: ConnectionStrings:DefaultConnection, JWT:SecretKey).
 
 ## Diagrama das Entidades
+Imagem
+classDiagram
 
-O diagrama abaixo representa as principais entidades da API de cursos, seus relacionamentos e campos principais:
-
-![Diagrama de Entidades](./A_diagram_in_the_form_of_an_Entity-Relationship_Di.png)
-
-**Observações:**
-
-- **Students**: cada aluno referencia um usuário do Identity via `UserId`.  
-- **Enrollments**: vincula alunos e cursos, com índice único `(StudentId, CourseId)` para evitar duplicação de matrícula.  
-- **Soft delete**: implementado em `Courses`, `Students` e `Enrollments` através do campo `IsDeleted`.  
-- **CreatedAt**: inicializado automaticamente em todas as entidades do domínio.  
-- **AspNetUsers**: mantém autenticação e e-mail único do Identity.
-
-## Diagrama de Entidades (Mermaid)
-
-```mermaid
-erDiagram
-    COURSES {
-        GUID Id PK "Chave primária"
-        string Title
-        string Description
-        string Category
-        int Workload
-        datetime CreatedAt
-        bool IsDeleted
-    }
-    
-    STUDENTS {
-        GUID Id PK "Chave primária"
-        string FullName
-        string UserId FK "FK para AspNetUsers.Id"
-        datetime CreatedAt
-        bool IsActive
-        bool IsDeleted
+    class Course {
+        +Guid Id
+        +string Title
+        +string Description
+        +string Category
+        +int Workload
+        +DateTime CreatedAt
+        +bool IsDeleted
     }
 
-    ENROLLMENTS {
-        GUID Id PK
-        GUID CourseId FK
-        string StudentId FK
-        string Status
-        datetime CreatedAt
-        bool IsDeleted
+    class Student {
+        +Guid Id
+        +string FullName
+        +string UserId
+        +DateTime CreatedAt
+        +bool IsActive
+        +bool IsDeleted
     }
 
-    ASPNETUSERS {
-        string Id PK
-        string Email "Email único"
-        string UserName
-        string PasswordHash
-        ...
+    class Enrollment {
+        +Guid Id
+        +Guid CourseId
+        +string StudentId
+        +string Status
+        +DateTime CreatedAt
+        +bool IsDeleted
     }
 
-    STUDENTS ||--|| ASPNETUSERS : "UserId → Id"
-    ENROLLMENTS }|--|| STUDENTS : "StudentId"
-    ENROLLMENTS }|--|| COURSES : "CourseId"
-    COURSES ||--|{ ENROLLMENTS : "Enrollments"
-    STUDENTS ||--|{ ENROLLMENTS : "Enrollments"
+    class AspNetUser {
+        +string Id
+        +string Email
+        +string UserName
+        +string PasswordHash
+    }
 
+    Course "1" -- "0..*" Enrollment : "Enrollments"
+    Student "1" -- "0..*" Enrollment : "Enrollments"
+    Student "1" -- "1" AspNetUser : "UserId → Id"
 
+## Observações:
+
+- Cada Student referencia um usuário do Identity via UserId.
+
+- Um Enrollment conecta um aluno a um curso; índice único (StudentId + CourseId) evita duplicação.
+
+- Soft delete implementado em Courses, Students e Enrollments (IsDeleted).
+
+- CreatedAt inicializa automaticamente.
+
+- Course.Title e Student.UserId possuem restrições únicas via EF Core.
+
+## Estrutura de Pastas
+```bash
+/PlataformaCursos.API
+|-- /Domain/Entities
+|    |-- Course.cs
+|    |-- Student.cs
+|    |-- Enrollment.cs
+|-- /Infrastructure/Data
+|    |-- ApplicationDbContext.cs
+|    |-- /Configurations
+|         |-- CourseConfiguration.cs
+|         |-- StudentConfiguration.cs
+|         |-- EnrollmentConfiguration.cs
+|-- /Controllers
+|-- Program.cs
+|-- appsettings.json
+|-- A_diagram_in_the_form_of_an_Entity-Relationship_Di.png
+```
