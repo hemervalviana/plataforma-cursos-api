@@ -1,11 +1,25 @@
-# Plataforma de Cursos - API
-## Objetivo
+# 📚 Plataforma de Cursos — API REST
 
-API REST desenvolvida em .NET 8 para gerenciamento de cursos, estudantes e matrículas, com autenticação JWT e controle de acesso por papéis.
+API REST desenvolvida em .NET 8 para gerenciamento de cursos, estudantes e matrículas, com autenticação baseada em JWT e integração completa com ASP.NET Identity.
 
-## Tecnologias
+Este projeto foi construído seguindo boas práticas de arquitetura, segurança e separação de responsabilidades, servindo como base para sistemas educacionais modernos.
 
-- .NET 8
+## 🎯 Objetivo
+
+Fornecer uma API segura e escalável para:
+
+- Cadastro e autenticação de usuários (Students)
+
+- Gerenciamento de cursos
+
+- Matrícula de alunos
+
+- Controle de acesso por papéis
+
+- Integração com Identity e JWT
+
+## 🛠️ Tecnologias Utilizadas
+.NET 8
 
 - ASP.NET Core Web API
 
@@ -13,175 +27,271 @@ API REST desenvolvida em .NET 8 para gerenciamento de cursos, estudantes e matr�
 
 - ASP.NET Identity
 
-- JWT
+- JWT (JSON Web Token)
 
-- SQL Server (local para desenvolvimento)
+- SQL Server
 
-## Requisitos
+- AutoMapper
+
+- Swagger (OpenAPI)
+
+## 📂 Arquitetura
+O projeto segue uma arquitetura em camadas:
+```bash
+PlataformaCursos.API
+│
+├── Domain
+│   ├── Entities
+│   └── Dtos
+│
+├── Infrastructure
+│   └── Data
+│
+├── Services
+│
+├── Controllers
+│
+└── Program.cs
+```
+Camadas
+| Camada         | Responsabilidade              |
+| -------------- | ----------------------------- |
+| Domain         | Regras de negócio e entidades |
+| Infrastructure | Persistência e EF Core        |
+| Services       | Regras de aplicação           |
+| Controllers    | Exposição dos endpoints       |
+| API            | Configuração e pipeline       |
+
+## 🗄️ Modelo de Dados
+📌 Diagrama ER
+
+Principais Entidades
+Student (Identity)
+
+- Herda de IdentityUser
+
+- Armazena dados de autenticação
+
+- Possui dados customizados
+```
+FullName
+CreatedAt
+IsActive
+IsDeleted
+```
+Course
+```
+Title
+Description
+Category
+Workload
+CreatedAt
+IsDeleted
+```
+Enrollment
+```
+StudentId
+CourseId
+Status
+CreatedAt
+IsDeleted
+```
+## 🔐 Autenticação e Segurança
+ASP.NET Identity
+
+- Gerenciamento de usuários
+
+- Hash seguro de senha
+
+- Controle de tentativas
+
+- Email único
+
+JWT
+
+A API utiliza autenticação baseada em tokens JWT.
+
+Cada requisição autenticada deve conter:
+```
+Authorization: Bearer {token}
+```
+## ⚙️ Configuração do Ambiente
+Requisitos
 
 - .NET SDK 8+
 
-- SQL Server local (ou remoto)
+- SQL Server
 
-## Como Executar
-```bash
-dotnet restore
-dotnet run
+## 🔑 Configurações Sensíveis (User Secrets)
+
+As informações sensíveis não ficam no repositório.
+
+Utiliza-se dotnet user-secrets.
+
+Configurar Connection String
 ```
-## Acesse:
-https://localhost:7293/swagger
-
-## Configurações
-
-As configurações sensíveis (connection string, JWT key) devem ser definidas via variáveis de ambiente ou User Secrets:
-```bash
-dotnet user-secrets set "ConnectionStrings:Default" "Server=localhost;Database=PlataformaCursosDb;User Id=sa;Password=SuaSenha"
-dotnet user-secrets set "Jwt:Key" "sua-chave-secreta"
+dotnet user-secrets set "ConnectionStrings:Default" "Server=localhost;Database=PlataformaCursosDb;User Id=sa;Password=SUASENHA"
+```
+Configurar JWT
+```
+dotnet user-secrets set "Jwt:Key" "SUA_CHAVE_SECRETA"
 dotnet user-secrets set "Jwt:Issuer" "PlataformaCursosAPI"
 dotnet user-secrets set "Jwt:Audience" "PlataformaCursosClient"
 ```
-## Estrutura do Banco de Dados
-Principais Entidades
-
-- Courses: cursos oferecidos
-
-- Students: alunos, integrados ao Identity (AspNetUsers)
-
-- Enrollments: matrículas de alunos em cursos
-
-Campos comuns:
-
-- CreatedAt → inicializado automaticamente
-
-- IsDeleted → soft delete
-
-Relacionamentos:
-
-- Enrollment.StudentId → AspNetUsers.Id
-
-- Enrollment.CourseId → Courses.Id
-
-- Índice único em (StudentId, CourseId) para evitar duplicação de matrícula
-
-- UserName e Email únicos em AspNetUsers
-
-## Diagrama das Entidades
-
-O diagrama abaixo representa as principais entidades da API de cursos, seus relacionamentos e campos principais:
-
-### Diagrama Visual (Imagem)
-
-![Diagrama de Entidades](https://raw.githubusercontent.com/hemervalviana/plataforma-cursos-api/main/A_diagram_in_the_form_of_an_Entity-Relationship_Di.png)
-
-Diagrama de Entidades (Mermaid)
-```erDiagram
-    %% =====================
-    %% Entidades do domínio
-    %% =====================
-    COURSES {
-        GUID Id PK "Chave primária"
-        string Title "Único, obrigatório"
-        string Description
-        string Category
-        int Workload
-        datetime CreatedAt
-        bool IsDeleted
-    }
-
-    ENROLLMENTS {
-        GUID Id PK
-        GUID CourseId FK
-        string StudentId FK
-        string Status
-        datetime CreatedAt
-        bool IsDeleted
-    }
-
-    %% =====================
-    %% Identity
-    %% =====================
-    ASPNETUSERS {
-        string Id PK "IdentityUser"
-        string UserName
-        string NormalizedUserName
-        string Email
-        string NormalizedEmail
-        string FullName
-        datetime CreatedAt
-        bool IsActive
-        bool IsDeleted
-        string PasswordHash
-        string SecurityStamp
-        string ConcurrencyStamp
-        bool EmailConfirmed
-        bool LockoutEnabled
-        int AccessFailedCount
-    }
-
-    ASPNETROLES {
-        string Id PK
-        string Name
-        string NormalizedName
-        string ConcurrencyStamp
-    }
-
-    ASPNETUSERROLES {
-        string UserId FK
-        string RoleId FK
-    }
-
-    %% =====================
-    %% Relacionamentos
-    %% =====================
-    STUDENTS ||--|| ASPNETUSERS : "Id"
-    ENROLLMENTS }|--|| COURSES : "CourseId"
-    ENROLLMENTS }|--|| ASPNETUSERS : "StudentId"
-    COURSES ||--|{ ENROLLMENTS : "Enrollments"
-    ASPNETUSERS ||--|{ ENROLLMENTS : "Enrollments"
-    ASPNETUSERS }|--|{ ASPNETUSERROLES : "UserRoles"
-    ASPNETROLES }|--|{ ASPNETUSERROLES : "UserRoles"
+Verificar
 ```
-## Observações
-
-- Soft delete: implementado via IsDeleted em Courses, Students e Enrollments.
-
-- FK compatíveis: tipos corretos para Identity (string) e cursos (Guid).
-
-- Seed inicial: você pode criar papéis (Admin, Instructor, Student) e um usuário admin via seeder.
-
-- Segurança: JWT configurado via User Secrets ou variáveis de ambiente, sem dados sensíveis no repositório.
-
-- Migration inicial: dotnet ef migrations add InitialCreate e dotnet ef database update para criar o banco.
-
-
-
-## Observações:
-
-- Cada Student referencia um usuário do Identity via UserId.
-
-- Um Enrollment conecta um aluno a um curso; índice único (StudentId + CourseId) evita duplicação.
-
-- Soft delete implementado em Courses, Students e Enrollments (IsDeleted).
-
-- CreatedAt inicializa automaticamente.
-
-- Course.Title e Student.UserId possuem restrições únicas via EF Core.
-
-## Estrutura de Pastas
-```bash
-/PlataformaCursos.API
-|-- /Domain/Entities
-|    |-- Course.cs
-|    |-- Student.cs
-|    |-- Enrollment.cs
-|-- /Infrastructure/Data
-|    |-- ApplicationDbContext.cs
-|    |-- /Configurations
-|         |-- CourseConfiguration.cs
-|         |-- StudentConfiguration.cs
-|         |-- EnrollmentConfiguration.cs
-|-- /Controllers
-|-- Program.cs
-|-- appsettings.json
-|-- A_diagram_in_the_form_of_an_Entity-Relationship_Di.png
+dotnet user-secrets list
 ```
+## 🧩 Entity Framework Core
+DbContext Integrado ao Identity
+```
+public class ApplicationDbContext 
+    : IdentityDbContext<Student>
+{
+    public DbSet<Course> Courses { get; set; }
+    public DbSet<Student> Students { get; set; }
+    public DbSet<Enrollment> Enrollments { get; set; }
+}
+```
+Migrations
+
+Criar migration:
+```
+dotnet ef migrations add InitialCreate
+```
+Aplicar no banco:
+```
+dotnet ef database update
+```
+## 🔐 Políticas do Identity
+
+Configurações aplicadas:
+| Regra                | Valor |
+| -------------------- | ----- |
+| Tamanho mínimo senha | 8     |
+| Letra maiúscula      | Sim   |
+| Número               | Sim   |
+| Email único          | Sim   |
+| Lockout              | Sim   |
+
+## 🚀 Execução do Projeto
+Restaurar dependências
+```
+dotnet restore
+```
+Executar
+```
+dotnet run
+```
+Acessar Swagger
+https://localhost:7293/swagger
+
+## 📡 Endpoints de Autenticação
+```
+POST /api/auth/register
+```
+Body:
+```
+{
+  "fullName": "João Silva",
+  "email": "joao@email.com",
+  "password": "Senha123"
+}
+```
+Login
+```
+POST /api/auth/login
+```
+Body:
+```
+{
+  "email": "joao@email.com",
+  "password": "Senha123"
+}
+```
+Retorno
+```
+{
+  "token": "eyJhbGciOiJIUzI1NiIs..."
+}
+```
+## 🔍 Usando Token no Postman
+
+1. Faça login
+
+2. Copie o token
+
+3. Vá em Authorization
+
+4. Tipo: Bearer Token
+
+5. Cole o token
+
+## 📦 Seed Inicial
+
+O sistema executa seed automático para:
+
+- Papéis:
+
+  - Admin
+
+  - Instructor
+
+  - Student
+
+- Usuário administrador
+## 🧪 Testes
+
+O projeto foi validado com:
+
+- Swagger
+
+- Postman
+
+- SQL Server Management Studio
+
+- Migrations EF Core
+
+- Logs do Identity
+  
+## 📈 Status do Projeto
+| Etapa                | Status |
+| -------------------- | ------ |
+| EF Core + SQL Server | ✅      |
+| Identity             | ✅      |
+| JWT                  | ✅      |
+| Migrations           | ✅      |
+| Services             | ✅      |
+| Autenticação         | ✅      |
+| Documentação         | ✅      |
+
+## 📌 Boas Práticas Aplicadas
+
+- Separação de camadas
+
+- DTOs
+
+- AutoMapper
+
+- Soft Delete
+
+- Filtros globais
+
+- Dependency Injection
+
+- Token JWT
+
+- User Secrets
+
+- Clean Architecture
+
+## 👨‍💻 Autor
+
+Hemerval Viana
+Analista de Sistemas
+
+Projeto desenvolvido para fins educacionais e portfólio profissional.
+
+## 📄 Licença
+
+Este projeto é livre para fins educacionais.
