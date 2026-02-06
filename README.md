@@ -30,7 +30,21 @@ https://localhost:7293/swagger
 Variáveis sensíveis via User Secrets ou environment variables (ex.: ConnectionStrings:DefaultConnection, JWT:SecretKey).
 
 ## Diagrama das Entidades
-Imagem
+
+O diagrama abaixo representa as principais entidades da API de cursos, seus relacionamentos e campos principais:
+
+### Diagrama Visual (Imagem)
+
+![Diagrama de Entidades](https://raw.githubusercontent.com/hemervalviana/plataforma-cursos-api/main/A_diagram_in_the_form_of-an-Entity-Relationship_Di.png)
+
+**Observações da imagem:**
+
+- **Students**: cada aluno referencia um usuário do Identity via `UserId`.  
+- **Enrollments**: vincula alunos e cursos, com índice único `(StudentId, CourseId)` para evitar duplicação de matrícula.  
+- **Soft delete**: implementado em `Courses`, `Students` e `Enrollments` através do campo `IsDeleted`.  
+- **CreatedAt**: inicializado automaticamente em todas as entidades do domínio.  
+- **AspNetUsers**: mantém autenticação e e-mail único do Identity.
+
 classDiagram
 
     class Course {
