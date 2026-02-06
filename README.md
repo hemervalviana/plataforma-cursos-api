@@ -35,7 +35,7 @@ O diagrama abaixo representa as principais entidades da API de cursos, seus rela
 
 ### Diagrama Visual (Imagem)
 
-![Diagrama de Entidades](https://raw.githubusercontent.com/hemervalviana/plataforma-cursos-api/main/A_diagram_in_the_form_of-an-Entity-Relationship_Di.png)
+![Diagrama de Entidades](https://raw.githubusercontent.com/hemervalviana/plataforma-cursos-api/main/A_diagram_in_the_form_of_an_Entity-Relationship_Di.png)
 
 **Observações da imagem:**
 
