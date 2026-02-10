@@ -35,6 +35,8 @@ Fornecer uma API segura e escalável para:
 
 - Swagger (OpenAPI)
 
+- FluentValidation
+
 ## 📂 Arquitetura
 O projeto segue uma arquitetura em camadas:
 ```bash
