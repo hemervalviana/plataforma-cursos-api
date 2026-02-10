@@ -1,12 +1,12 @@
-# 📚 Plataforma de Cursos — API REST
+## 📚 Plataforma de Cursos — API REST
 
-API REST desenvolvida em .NET 8 para gerenciamento de cursos, estudantes e matrículas, com autenticação baseada em JWT e integração completa com ASP.NET Identity.
+API REST desenvolvida em .NET 8 para gerenciamento de cursos, estudantes e matrículas, com autenticação baseada em JWT e integração com ASP.NET Identity.
 
-Este projeto foi construído seguindo boas práticas de arquitetura, segurança e separação de responsabilidades, servindo como base para sistemas educacionais modernos.
+O projeto segue boas práticas de arquitetura, segurança e separação de responsabilidades, servindo como base para sistemas educacionais modernos.
 
 ## 🎯 Objetivo
 
-Fornecer uma API segura e escalável para:
+- Fornecer uma API segura e escalável para:
 
 - Cadastro e autenticação de usuários (Students)
 
@@ -14,12 +14,12 @@ Fornecer uma API segura e escalável para:
 
 - Matrícula de alunos
 
-- Controle de acesso por papéis
+- Controle de acesso por papéis (Roles)
 
 - Integração com Identity e JWT
 
 ## 🛠️ Tecnologias Utilizadas
-.NET 8
+- .NET 8
 
 - ASP.NET Core Web API
 
@@ -44,16 +44,19 @@ PlataformaCursos.API
 │
 ├── Domain
 │   ├── Entities
-│   └── Dtos
+│   └── DTOs
+│
+├── Application
+│   ├── Services
+│   └── Validators
 │
 ├── Infrastructure
 │   └── Data
 │
-├── Services
-│
 ├── Controllers
 │
 └── Program.cs
+
 ```
 Camadas
 | Camada         | Responsabilidade              |
@@ -65,14 +68,12 @@ Camadas
 | API            | Configuração e pipeline       |
 
 ## 🗄️ Modelo de Dados
-📌 Diagrama ER
-
 Principais Entidades
 Student (Identity)
 
 - Herda de IdentityUser
 
-- Armazena dados de autenticação
+- Gerencia autenticação
 
 - Possui dados customizados
 ```
@@ -109,11 +110,11 @@ ASP.NET Identity
 
 - Email único
 
-JWT
+JWT (JSON Web Token)
 
-A API utiliza autenticação baseada em tokens JWT.
+A autenticação é feita via token JWT.
 
-Cada requisição autenticada deve conter:
+Todas as requisições protegidas devem conter:
 ```
 Authorization: Bearer {token}
 ```
@@ -233,7 +234,7 @@ Retorno
 
 O sistema executa seed automático para:
 
-- Papéis:
+- Roles:
 
   - Admin
 
@@ -269,7 +270,7 @@ O projeto foi validado com:
 
 ## 📌 Boas Práticas Aplicadas
 
-- Separação de camadas
+- Arquitetura em camadas
 
 - DTOs
 
@@ -281,11 +282,13 @@ O projeto foi validado com:
 
 - Dependency Injection
 
-- Token JWT
+- JWT
 
 - User Secrets
 
-- Clean Architecture
+- Validações com FluentValidation
+
+- Tratamento centralizado de erros
 
 ## 👨‍💻 Autor
 
