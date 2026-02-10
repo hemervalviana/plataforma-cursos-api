@@ -1,143 +1,226 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+ï»¿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using PlataformaCursos.API.Application.Services;
 using PlataformaCursos.API.Domain.Entities;
 using PlataformaCursos.API.Infrastructure.Data;
+using PlataformaCursos.API.Infrastructure.Middleware;
+using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ======================================================
-// CONFIGURAÇÃO DE SERVIÇOS (DEPENDENCY INJECTION)
-// ======================================================
-builder.Services.AddScoped<TokenService>();
-builder.Services.AddScoped<AuthService>();
+#region ==========================
+// CONFIGURAÃ‡ÃƒO DE SERVIÃ‡OS
+#endregion ==========================
 
 
-// --------------------------
-// Controllers (Web API)
-// --------------------------
+// ======================================================
+// Controllers
+// ======================================================
 builder.Services.AddControllers();
 
 
-// --------------------------
-// Swagger (Documentação)
-// --------------------------
+// ======================================================
+// ProblemDetails
+// ======================================================
+builder.Services.AddProblemDetails();
+
+
+// ======================================================
+// Swagger + JWT
+// ======================================================
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
-
-// --------------------------
-// DbContext (SQL Server via User Secrets / Variáveis)
-// --------------------------
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-	options.UseSqlServer(
-		builder.Configuration.GetConnectionString("Default")
-	)
-);
-
-
-// --------------------------
-// ASP.NET Identity
-// --------------------------
-builder.Services.AddIdentity<Student, IdentityRole>(options =>
+builder.Services.AddSwaggerGen(opt =>
 {
-	// Regras de senha
-	options.Password.RequireDigit = true;
-	options.Password.RequiredLength = 8;
-	options.Password.RequireNonAlphanumeric = false;
-	options.Password.RequireUppercase = true;
-	options.Password.RequireLowercase = true;
+	opt.SwaggerDoc("v1",
+		new OpenApiInfo
+		{
+			Title = "Plataforma Cursos API",
+			Version = "v1"
+		});
 
-	// Lockout (bloqueio por tentativas)
-	options.Lockout.MaxFailedAccessAttempts = 5;
-	options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-	options.Lockout.AllowedForNewUsers = true;
+	opt.AddSecurityDefinition("Bearer",
+		new OpenApiSecurityScheme
+		{
+			Name = "Authorization",
+			Type = SecuritySchemeType.Http,
+			Scheme = "bearer",
+			BearerFormat = "JWT",
+			In = ParameterLocation.Header,
+			Description = "Bearer {seu token}"
+		});
 
-	// Email único
-	options.User.RequireUniqueEmail = true;
-})
-.AddEntityFrameworkStores<ApplicationDbContext>()
-.AddDefaultTokenProviders();
+	opt.AddSecurityRequirement(new OpenApiSecurityRequirement
+	{
+		{
+			new OpenApiSecurityScheme
+			{
+				Reference = new OpenApiReference
+				{
+					Type = ReferenceType.SecurityScheme,
+					Id = "Bearer"
+				}
+			},
+			Array.Empty<string>()
+		}
+	});
+});
 
 
-// --------------------------
+// ======================================================
+// DbContext
+// ======================================================
+builder.Services.AddDbContext<ApplicationDbContext>(opt =>
+{
+	opt.UseSqlServer(
+		builder.Configuration.GetConnectionString("Default"));
+});
+
+
+// ======================================================
+// Identity
+// ======================================================
+builder.Services
+	.AddIdentity<Student, IdentityRole>(opt =>
+	{
+		opt.Password.RequireDigit = true;
+		opt.Password.RequiredLength = 8;
+		opt.Password.RequireNonAlphanumeric = false;
+		opt.Password.RequireUppercase = true;
+		opt.Password.RequireLowercase = true;
+
+		opt.Lockout.MaxFailedAccessAttempts = 5;
+		opt.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+
+		opt.User.RequireUniqueEmail = true;
+	})
+	.AddEntityFrameworkStores<ApplicationDbContext>()
+	.AddDefaultTokenProviders();
+
+
+// ======================================================
 // AutoMapper
-// --------------------------
+// ======================================================
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 
-// --------------------------
-// JWT Authentication
-// --------------------------
+// ======================================================
+// Application Services
+// ======================================================
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<CourseService>();
+builder.Services.AddScoped<StudentService>();
+builder.Services.AddScoped<EnrollmentService>();
 
-// Lê configurações do User Secrets / Environment
-var jwtKey = builder.Configuration["Jwt:Key"];
-var jwtIssuer = builder.Configuration["Jwt:Issuer"];
-var jwtAudience = builder.Configuration["Jwt:Audience"];
 
-// Validação de segurança
-if (string.IsNullOrEmpty(jwtKey))
-{
-	throw new InvalidOperationException("JWT Key não configurada.");
-}
+// ======================================================
+// JWT
+// ======================================================
+var jwtKey = builder.Configuration["Jwt:Key"]
+	?? throw new InvalidOperationException("JWT:Key nÃ£o configurada.");
 
-var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+var jwtIssuer = builder.Configuration["Jwt:Issuer"]
+	?? throw new InvalidOperationException("JWT:Issuer nÃ£o configurado.");
+
+var jwtAudience = builder.Configuration["Jwt:Audience"]
+	?? throw new InvalidOperationException("JWT:Audience nÃ£o configurado.");
+
+var key = new SymmetricSecurityKey(
+	Encoding.UTF8.GetBytes(jwtKey));
 
 builder.Services
-	.AddAuthentication(options =>
+	//.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+	.AddAuthentication(opt =>
 	{
-		options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-		options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+		opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+		opt.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 	})
-	.AddJwtBearer(options =>
+	.AddJwtBearer(opt =>
 	{
-		options.TokenValidationParameters = new TokenValidationParameters
+		opt.Events = new JwtBearerEvents
 		{
-			// Valida assinatura
+			OnAuthenticationFailed = ctx =>
+			{
+				Console.WriteLine("JWT FAILED: " + ctx.Exception.Message);
+				return Task.CompletedTask;
+			},
+			OnTokenValidated = ctx =>
+			{
+				Console.WriteLine("JWT OK");
+				return Task.CompletedTask;
+			}
+		};
+
+		opt.TokenValidationParameters = new TokenValidationParameters
+		{
 			ValidateIssuerSigningKey = true,
 			IssuerSigningKey = key,
 
-			// Valida emissor
 			ValidateIssuer = true,
 			ValidIssuer = jwtIssuer,
 
-			// Valida audiência
 			ValidateAudience = true,
 			ValidAudience = jwtAudience,
 
-			// Valida expiração
 			ValidateLifetime = true,
 
-			// Tempo extra permitido (clock skew)
-			ClockSkew = TimeSpan.Zero
+			ClockSkew = TimeSpan.Zero,
+
+			// ðŸ”´ ISSO Ã‰ O MAIS IMPORTANTE
+			RoleClaimType = ClaimTypes.Role,
+			NameClaimType = ClaimTypes.Name
 		};
 	});
 
 
-// --------------------------
-// Autorização
-// --------------------------
+// ======================================================
+// Authorization
+// ======================================================
 builder.Services.AddAuthorization();
 
 
 // ======================================================
-// BUILD DA APLICAÇÃO
+// BUILD
 // ======================================================
-
 var app = builder.Build();
 
 
 // ======================================================
-// PIPELINE HTTP (MIDDLEWARES)
+// Seed (Somente em Development)
 // ======================================================
+if (app.Environment.IsDevelopment())
+{
+	using var scope = app.Services.CreateScope();
+
+	var services = scope.ServiceProvider;
+
+	var userManager =
+		services.GetRequiredService<UserManager<Student>>();
+
+	var roleManager =
+		services.GetRequiredService<RoleManager<IdentityRole>>();
+
+	await DbInitializer.SeedAsync(userManager, roleManager);
+}
 
 
-// --------------------------
-// Swagger (Somente em Dev)
-// --------------------------
+// ======================================================
+// Error Handling
+// ======================================================
+app.UseExceptionHandler();
+
+app.UseStatusCodePages();
+
+
+// ======================================================
+// Swagger
+// ======================================================
 if (app.Environment.IsDevelopment())
 {
 	app.UseSwagger();
@@ -145,27 +228,24 @@ if (app.Environment.IsDevelopment())
 }
 
 
-// --------------------------
-// HTTPS
-// --------------------------
+// ======================================================
+// Middlewares
+// ======================================================
 app.UseHttpsRedirection();
 
+app.UseMiddleware<ExceptionMiddleware>();
 
-// --------------------------
-// Autenticação / Autorização
-// --------------------------
 app.UseAuthentication();
 app.UseAuthorization();
 
 
-// --------------------------
+// ======================================================
 // Rotas
-// --------------------------
+// ======================================================
 app.MapControllers();
 
 
 // ======================================================
-// EXECUÇÃO
+// Run
 // ======================================================
-
 app.Run();

@@ -15,39 +15,27 @@ public class TokenService
 		_configuration = configuration;
 	}
 
-	public string GenerateToken(
-		Student user,
-		IList<string> roles)
+	public string GenerateToken(Student user, IList<string> roles)
 	{
 		var claims = new List<Claim>
 		{
-			new Claim(
-				ClaimTypes.NameIdentifier,
-				user.Id),
-
-			new Claim(
-				ClaimTypes.Name,
-				user.UserName!),
-
-			new Claim(
-				ClaimTypes.Email,
-				user.Email!)
+			new Claim(ClaimTypes.NameIdentifier, user.Id),
+			new Claim(ClaimTypes.Name, user.UserName!),
+			new Claim(ClaimTypes.Email, user.Email!)
 		};
 
+		// 🔥 ROLE PADRÃO
 		foreach (var role in roles)
 		{
-			claims.Add(
-				new Claim(ClaimTypes.Role, role));
+			claims.Add(new Claim(ClaimTypes.Role, role));
 		}
 
 		var key = new SymmetricSecurityKey(
-			Encoding.UTF8.GetBytes(
-				_configuration["Jwt:Key"]!));
+			Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
 
-		var credentials =
-			new SigningCredentials(
-				key,
-				SecurityAlgorithms.HmacSha256);
+		var credentials = new SigningCredentials(
+			key,
+			SecurityAlgorithms.HmacSha256);
 
 		var token = new JwtSecurityToken(
 			issuer: _configuration["Jwt:Issuer"],
@@ -56,7 +44,6 @@ public class TokenService
 			expires: DateTime.UtcNow.AddHours(2),
 			signingCredentials: credentials);
 
-		return new JwtSecurityTokenHandler()
-			.WriteToken(token);
+		return new JwtSecurityTokenHandler().WriteToken(token);
 	}
 }

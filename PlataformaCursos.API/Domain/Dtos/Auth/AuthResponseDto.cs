@@ -1,4 +1,4 @@
-﻿namespace PlataformaCursos.API.Domain.Dtos
+﻿namespace PlataformaCursos.API.Domain.Dtos.Auth
 {
 	/// <summary>
 	/// DTO retornado ao cliente após login bem-sucedido.

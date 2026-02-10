@@ -24,7 +24,20 @@ public class StudentConfiguration : IEntityTypeConfiguration<Student>
 		builder.Property(s => s.IsDeleted)
 			   .HasDefaultValue(false);
 
-		// Global filter
+		// ============================
+		// Email único (Identity)
+		// ============================
+
+		builder.HasIndex(s => s.NormalizedEmail)
+			   .IsUnique();
+
+		builder.HasIndex(s => s.NormalizedUserName)
+			   .IsUnique();
+
+		// ============================
+		// Soft Delete Global Filter
+		// ============================
+
 		builder.HasQueryFilter(s => !s.IsDeleted);
 	}
 }

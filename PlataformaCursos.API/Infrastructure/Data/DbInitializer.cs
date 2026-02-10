@@ -5,12 +5,14 @@ namespace PlataformaCursos.API.Infrastructure.Data;
 
 public static class DbInitializer
 {
-	public static async Task SeedRolesAndAdminAsync(
+	public static async Task SeedAsync(
 		UserManager<Student> userManager,
 		RoleManager<IdentityRole> roleManager)
 	{
-		// ===== 1. Criar Roles =====
-		string[] roles = new[] { "Admin", "Instructor", "Student" };
+		// ===============================
+		// 1. Criar Roles
+		// ===============================
+		string[] roles = { "Admin", "Instructor", "Student" };
 
 		foreach (var role in roles)
 		{
@@ -20,27 +22,73 @@ public static class DbInitializer
 			}
 		}
 
-		// ===== 2. Criar usuário admin =====
-		string adminEmail = "admin@plataforma.com";
-		string adminPassword = "Admin123!"; // Use segredo seguro em produção
 
-		var adminUser = await userManager.FindByEmailAsync(adminEmail);
-		if (adminUser == null)
+		// ===============================
+		// 2. Criar Admin
+		// ===============================
+		await CreateUserIfNotExists(
+			userManager,
+			email: "admin@plataforma.com",
+			password: "Admin123!",
+			fullName: "Administrador",
+			role: "Admin"
+		);
+
+
+		// ===============================
+		// 3. Criar Instructor
+		// ===============================
+		await CreateUserIfNotExists(
+			userManager,
+			email: "instructor@plataforma.com",
+			password: "Instructor123!",
+			fullName: "Instrutor Padrão",
+			role: "Instructor"
+		);
+
+
+		// ===============================
+		// 4. Criar Student (usuário comum)
+		// ===============================
+		await CreateUserIfNotExists(
+			userManager,
+			email: "student@plataforma.com",
+			password: "Student123!",
+			fullName: "Aluno Padrão",
+			role: "Student"
+		);
+	}
+
+
+	// ===============================
+	// Método auxiliar
+	// ===============================
+	private static async Task CreateUserIfNotExists(
+		UserManager<Student> userManager,
+		string email,
+		string password,
+		string fullName,
+		string role)
+	{
+		var user = await userManager.FindByEmailAsync(email);
+
+		if (user != null)
+			return;
+
+		var newUser = new Student
 		{
-			var admin = new Student
-			{
-				UserName = adminEmail,
-				Email = adminEmail,
-				FullName = "Administrador",
-				CreatedAt = DateTime.UtcNow,
-				IsActive = true
-			};
+			UserName = email,
+			Email = email,
+			FullName = fullName,
+			CreatedAt = DateTime.UtcNow,
+			IsActive = true
+		};
 
-			var result = await userManager.CreateAsync(admin, adminPassword);
-			if (result.Succeeded)
-			{
-				await userManager.AddToRoleAsync(admin, "Admin");
-			}
-		}
+		var result = await userManager.CreateAsync(newUser, password);
+
+		if (!result.Succeeded)
+			return;
+
+		await userManager.AddToRoleAsync(newUser, role);
 	}
 }

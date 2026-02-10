@@ -12,18 +12,31 @@ public class ApplicationDbContext : IdentityDbContext<Student>
 	{
 	}
 
-	// DbSets do domínio
+	// =============================
+	// DbSets
+	// =============================
+
 	public DbSet<Course> Courses { get; set; } = null!;
 	public DbSet<Enrollment> Enrollments { get; set; } = null!;
 
-	// DbSet<Student> não é necessário, Identity já gerencia
+	// =============================
+	// Model Creating
+	// =============================
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
+		// ⚠️ Sempre primeiro
 		base.OnModelCreating(modelBuilder);
 
+		// =============================
+		// Domain Configurations
+		// =============================
+
 		modelBuilder.ApplyConfiguration(new CourseConfiguration());
-		modelBuilder.ApplyConfiguration(new StudentConfiguration());
 		modelBuilder.ApplyConfiguration(new EnrollmentConfiguration());
+
+		// ⚠️ Student herda IdentityUser
+		// Cuidado para não sobrescrever mapeamento padrão
+		modelBuilder.ApplyConfiguration(new StudentConfiguration());
 	}
 }
