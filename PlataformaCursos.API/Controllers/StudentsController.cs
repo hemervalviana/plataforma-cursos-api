@@ -6,7 +6,11 @@ using System.Security.Claims;
 
 namespace PlataformaCursos.API.Controllers;
 
+/// <summary>
+/// Gerencia estudantes da plataforma
+/// </summary>
 [ApiController]
+[Tags("Students")]
 [Route("api/[controller]")]
 public class StudentsController : ControllerBase
 {
@@ -20,10 +24,25 @@ public class StudentsController : ControllerBase
 	// =========================
 	// POST (Admin)
 	// =========================
+
+	/// <summary>
+	/// Cria um novo estudante
+	/// </summary>
+	/// <remarks>
+	/// Apenas administradores podem criar estudantes.
+	/// O e-mail deve ser único.
+	/// </remarks>
+	/// <response code="201">Estudante criado com sucesso</response>
+	/// <response code="401">Não autenticado</response>
+	/// <response code="403">Sem permissão</response>
+	/// <response code="409">E-mail já existente</response>
 	[Authorize(Roles = "Admin")]
 	[HttpPost]
-	public async Task<IActionResult> Create(
-		CreateStudentDto dto)
+	[ProducesResponseType(typeof(StudentResponseDto), StatusCodes.Status201Created)]
+	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType(StatusCodes.Status409Conflict)]
+	public async Task<IActionResult> Create(CreateStudentDto dto)
 	{
 		var result = await _service.CreateAsync(dto);
 
@@ -39,8 +58,22 @@ public class StudentsController : ControllerBase
 	// =========================
 	// GET ALL (Admin)
 	// =========================
+
+	/// <summary>
+	/// Lista todos os estudantes
+	/// </summary>
+	/// <remarks>
+	/// Endpoint restrito para administradores.
+	/// Retorna dados sensíveis.
+	/// </remarks>
+	/// <response code="200">Lista retornada</response>
+	/// <response code="401">Não autenticado</response>
+	/// <response code="403">Sem permissão</response>
 	[Authorize(Roles = "Admin")]
 	[HttpGet]
+	[ProducesResponseType(typeof(IEnumerable<StudentResponseDto>), StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> GetAll()
 	{
 		return Ok(await _service.GetAllAsync());
@@ -49,8 +82,24 @@ public class StudentsController : ControllerBase
 	// =========================
 	// GET BY ID (Admin ou Dono)
 	// =========================
+
+	/// <summary>
+	/// Busca um estudante por ID
+	/// </summary>
+	/// <remarks>
+	/// Somente o próprio estudante ou um Admin pode acessar.
+	/// </remarks>
+	/// <param name="id">ID do estudante</param>
+	/// <response code="200">Estudante encontrado</response>
+	/// <response code="401">Não autenticado</response>
+	/// <response code="403">Sem permissão</response>
+	/// <response code="404">Não encontrado</response>
 	[Authorize]
 	[HttpGet("{id}")]
+	[ProducesResponseType(typeof(StudentResponseDto), StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	public async Task<IActionResult> GetById(string id)
 	{
 		var userId =
@@ -72,8 +121,24 @@ public class StudentsController : ControllerBase
 	// =========================
 	// PUT (Admin ou Dono)
 	// =========================
+
+	/// <summary>
+	/// Atualiza os dados do estudante
+	/// </summary>
+	/// <remarks>
+	/// Apenas o próprio estudante ou Admin.
+	/// </remarks>
+	/// <param name="id">ID do estudante</param>
+	/// <response code="204">Atualizado com sucesso</response>
+	/// <response code="401">Não autenticado</response>
+	/// <response code="403">Sem permissão</response>
+	/// <response code="404">Não encontrado</response>
 	[Authorize]
 	[HttpPut("{id}")]
+	[ProducesResponseType(StatusCodes.Status204NoContent)]
+	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	public async Task<IActionResult> Update(
 		string id,
 		UpdateStudentDto dto)
@@ -98,8 +163,25 @@ public class StudentsController : ControllerBase
 	// =========================
 	// DELETE (Admin)
 	// =========================
+
+	/// <summary>
+	/// Remove (desativa) um estudante
+	/// </summary>
+	/// <remarks>
+	/// Apenas administradores.
+	/// Realiza soft delete.
+	/// </remarks>
+	/// <param name="id">ID do estudante</param>
+	/// <response code="204">Removido com sucesso</response>
+	/// <response code="401">Não autenticado</response>
+	/// <response code="403">Sem permissão</response>
+	/// <response code="404">Não encontrado</response>
 	[Authorize(Roles = "Admin")]
 	[HttpDelete("{id}")]
+	[ProducesResponseType(StatusCodes.Status204NoContent)]
+	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	public async Task<IActionResult> Delete(string id)
 	{
 		var deleted = await _service.DeleteAsync(id);
@@ -113,8 +195,21 @@ public class StudentsController : ControllerBase
 	// =========================
 	// GET ME
 	// =========================
+
+	/// <summary>
+	/// Retorna o perfil do usuário autenticado
+	/// </summary>
+	/// <remarks>
+	/// Baseado no token JWT.
+	/// </remarks>
+	/// <response code="200">Perfil retornado</response>
+	/// <response code="401">Não autenticado</response>
+	/// <response code="404">Perfil não encontrado</response>
 	[Authorize]
 	[HttpGet("me")]
+	[ProducesResponseType(typeof(StudentResponseDto), StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	public async Task<IActionResult> Me()
 	{
 		var result = await _service.GetMeAsync(User);

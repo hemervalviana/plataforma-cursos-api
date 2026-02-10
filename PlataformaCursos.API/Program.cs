@@ -1,13 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using PlataformaCursos.API.Application.Services;
 using PlataformaCursos.API.Domain.Entities;
 using PlataformaCursos.API.Infrastructure.Data;
 using PlataformaCursos.API.Infrastructure.Middleware;
+using System.Reflection;
 using System.Security.Claims;
 using System.Text;
 
@@ -69,6 +70,11 @@ builder.Services.AddSwaggerGen(opt =>
 			Array.Empty<string>()
 		}
 	});
+
+	var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+	var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+
+	opt.IncludeXmlComments(xmlPath);
 });
 
 
@@ -134,8 +140,7 @@ var jwtAudience = builder.Configuration["Jwt:Audience"]
 var key = new SymmetricSecurityKey(
 	Encoding.UTF8.GetBytes(jwtKey));
 
-builder.Services
-	//.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+builder.Services	
 	.AddAuthentication(opt =>
 	{
 		opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

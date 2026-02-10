@@ -6,7 +6,11 @@ using PlataformaCursos.API.Domain.DTOs.Courses;
 
 namespace PlataformaCursos.API.Controllers;
 
+/// <summary>
+/// Gerencia os cursos da plataforma
+/// </summary>
 [ApiController]
+[Tags("Courses")]
 [Route("api/[controller]")]
 public class CoursesController : ControllerBase
 {
@@ -17,8 +21,21 @@ public class CoursesController : ControllerBase
 		_service = service;
 	}
 
+	// =============================
+	// DEBUG
+	// =============================
+
+	/// <summary>
+	/// Exibe informações do usuário autenticado (debug)
+	/// </summary>
+	/// <remarks>
+	/// Usado para validar claims e roles no JWT.
+	/// </remarks>
 	[Authorize(Roles = "Admin,Instructor")]
 	[HttpGet("debug-user")]
+	[ProducesResponseType(StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public IActionResult DebugUser()
 	{
 		return Ok(new
@@ -32,21 +49,34 @@ public class CoursesController : ControllerBase
 		});
 	}
 
-
-	[HttpGet("teste")]
-	public IActionResult GetTest()
-	{
-		return Ok("API is working!");
-	}
+	// =============================
+	// HEALTH CHECK
+	// =============================	
 
 	// =============================
 	// POST - Create
 	// =============================
-	[Authorize(Roles = "Admin,Instructor")]	
+
+	/// <summary>
+	/// Cria um novo curso
+	/// </summary>
+	/// <remarks>
+	/// Apenas Admin ou Instructor.
+	/// O título deve ter no mínimo 3 caracteres.
+	/// </remarks>
+	/// <response code="201">Curso criado</response>
+	/// <response code="400">Entrada inválida</response>
+	/// <response code="401">Não autenticado</response>
+	/// <response code="403">Sem permissão</response>
+	[Authorize(Roles = "Admin,Instructor")]
 	[HttpPost]
+	[ProducesResponseType(typeof(CourseResponseDto), StatusCodes.Status201Created)]
+	[ProducesResponseType(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType(StatusCodes.Status403Forbidden)]
 	public async Task<IActionResult> Create(CreateCourseDto dto)
 	{
-		var result = await _service.CreateAsync(dto);		
+		var result = await _service.CreateAsync(dto);
 
 		return CreatedAtAction(
 			nameof(GetById),
@@ -57,15 +87,36 @@ public class CoursesController : ControllerBase
 	// =============================
 	// GET - List
 	// =============================
+
+	/// <summary>
+	/// Lista cursos com paginação e filtros
+	/// </summary>
+	/// <remarks>
+	/// Filtros disponíveis:
+	/// - category
+	/// - search (título)
+	/// - orderBy (title, createdAt)
+	///
+	/// Cache: 60s com suporte a ETag.
+	/// </remarks>
+	/// <param name="category">Categoria do curso</param>
+	/// <param name="search">Texto para busca</param>
+	/// <param name="orderBy">Campo de ordenação</param>
+	/// <param name="page">Página (default: 1)</param>
+	/// <param name="pageSize">Tamanho da página (default: 10)</param>
+	/// <response code="200">Lista retornada</response>
+	/// <response code="304">Não modificado (cache)</response>
 	[AllowAnonymous]
 	[HttpGet]
 	[ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
+	[ProducesResponseType(typeof(PagedResult<CourseResponseDto>), StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status304NotModified)]
 	public async Task<IActionResult> Get(
-	string? category,
-	string? search,
-	string? orderBy = "title",
-	int page = 1,
-	int pageSize = 10)
+		string? category,
+		string? search,
+		string? orderBy = "title",
+		int page = 1,
+		int pageSize = 10)
 	{
 		var result = await _service.GetAsync(
 			category,
@@ -84,13 +135,26 @@ public class CoursesController : ControllerBase
 		return Ok(result);
 	}
 
-
 	// =============================
 	// GET - By Id
 	// =============================
+
+	/// <summary>
+	/// Busca um curso por ID
+	/// </summary>
+	/// <remarks>
+	/// Suporta cache com ETag.
+	/// </remarks>
+	/// <param name="id">ID do curso</param>
+	/// <response code="200">Curso encontrado</response>
+	/// <response code="304">Não modificado</response>
+	/// <response code="404">Não encontrado</response>
 	[AllowAnonymous]
 	[HttpGet("{id}")]
 	[ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
+	[ProducesResponseType(typeof(CourseResponseDto), StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status304NotModified)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	public async Task<IActionResult> GetById(Guid id)
 	{
 		var result = await _service.GetByIdAsync(id);
@@ -108,12 +172,27 @@ public class CoursesController : ControllerBase
 		return Ok(result);
 	}
 
+	// =============================
+	// PUT - Update
+	// =============================
 
-	// =============================
-	// PUT
-	// =============================
+	/// <summary>
+	/// Atualiza um curso
+	/// </summary>
+	/// <remarks>
+	/// Apenas Admin ou Instructor.
+	/// </remarks>
+	/// <param name="id">ID do curso</param>
+	/// <response code="204">Atualizado</response>
+	/// <response code="401">Não autenticado</response>
+	/// <response code="403">Sem permissão</response>
+	/// <response code="404">Não encontrado</response>
 	[Authorize(Roles = "Admin,Instructor")]
 	[HttpPut("{id}")]
+	[ProducesResponseType(StatusCodes.Status204NoContent)]
+	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	public async Task<IActionResult> Update(
 		Guid id,
 		UpdateCourseDto dto)
@@ -129,8 +208,24 @@ public class CoursesController : ControllerBase
 	// =============================
 	// DELETE
 	// =============================
+
+	/// <summary>
+	/// Remove um curso
+	/// </summary>
+	/// <remarks>
+	/// Apenas administradores.
+	/// </remarks>
+	/// <param name="id">ID do curso</param>
+	/// <response code="204">Removido</response>
+	/// <response code="401">Não autenticado</response>
+	/// <response code="403">Sem permissão</response>
+	/// <response code="404">Não encontrado</response>
 	[Authorize(Roles = "Admin")]
 	[HttpDelete("{id}")]
+	[ProducesResponseType(StatusCodes.Status204NoContent)]
+	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType(StatusCodes.Status403Forbidden)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	public async Task<IActionResult> Delete(Guid id)
 	{
 		var deleted = await _service.DeleteAsync(id);
