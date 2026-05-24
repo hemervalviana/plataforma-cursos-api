@@ -1,62 +1,19 @@
 # Changelog
 
-## [v0.2.0] — 2026-05-xx
+## [0.1.0] - 2026-02-10
 
-### Adicionado — Nível 2
+### Added
+- JWT authentication
+- ASP.NET Identity integration
+- Courses, Students and Enrollments API
+- Swagger documentation
+- Role-based authorization
+- FluentValidation
 
-#### Módulo de Pagamentos
-- Entidade `Payment` com estados: Pending, Paid, Failed, Refunded
-- Value Object `Money` com validação de valor e moeda
-- Enums `PaymentStatus` e `PaymentMethod`
-- Factory Method `Payment.Create()` com invariantes de domínio
-- Idempotência via header `Idempotency-Key`
-- Unicidade: apenas um pagamento ativo por matrícula
-- Endpoints: criar, confirmar, falhar, estornar, listar, buscar por id
+### Changed
+- Standardized error handling
+- Improved API documentation
 
-#### Gateway de Pagamento
-- Interface `IPaymentGateway` isolando integração externa
-- `FakePaymentGateway` com respostas determinísticas para testes
-- `GatewayResult` padronizando resposta do gateway
-
-#### Arquitetura
-- Repositório `IPaymentRepository` + `PaymentRepository` (EF Core)
-- Clean Architecture com 4 camadas: Domain, Application, Infrastructure, API
-- DIP aplicado: services dependem de interfaces, não de implementações
-
-#### Validações e Erros
-- `CreatePaymentDtoValidator` e `ConfirmPaymentDtoValidator` (FluentValidation)
-- `ProblemDetails` como formato padrão de erro (RFC 7807)
-- Erros padronizados: 400, 401, 403, 404, 409, 422
-
-#### Observabilidade
-- Logs estruturados com `ILogger` nos pontos críticos
-- `CorrelationIdMiddleware` para rastreamento por requisição
-- Health checks: `/health` e `/health/db`
-
-#### Testes
-- 17 testes de unidade cobrindo domínio (Money, Payment)
-- 9 testes de integração cobrindo API ponta a ponta
-- `ApiFactory` com banco de teste isolado (SQL Server)
-- `TokenHelper` gerando tokens por papel para testes
-
-#### Containerização e Pipeline
-- `Dockerfile` multi-stage (restore/build/publish/runtime)
-- `docker-compose.yml` com API + SQL Server + volume persistente
-- `.env.example` sem segredos
-- GitHub Actions: PR (build/test) e main (build/test/artefato/imagem/smoke test)
-
----
-
-## [v0.1.0] — 2026-02-10
-
-### Adicionado — Nível 1
-- API REST com .NET 8 (atualizado para .NET 10)
-- Entidades: Student, Course, Enrollment
-- ASP.NET Identity + JWT
-- CRUD de cursos, estudantes e matrículas
-- Roles: Admin, Instructor, Student
-- Seed automático em Development
-- Documentação com Scalar
-- Soft delete e filtros globais
-- FluentValidation e AutoMapper
-- Migrations com EF Core
+### Fixed
+- Enrollment duplication
+- Email uniqueness

@@ -12,32 +12,28 @@ public class ApplicationDbContext : IdentityDbContext<Student>
 	{
 	}
 
-	// ======================================================
+	// =============================
 	// DbSets
-	// ======================================================
+	// =============================
+
 	public DbSet<Course> Courses { get; set; } = null!;
 	public DbSet<Enrollment> Enrollments { get; set; } = null!;
 
-	/// <summary>
-	/// Pagamentos das matrículas.
-	/// Agregado separado — referencia Enrollment pelo Id.
-	/// </summary>
-	public DbSet<Payment> Payments { get; set; } = null!;
-
-	// ======================================================
+	// =============================
 	// Model Creating
-	// ======================================================
+	// =============================
+
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
-		// ⚠️ Sempre primeiro — configura tabelas do Identity
+		// ⚠️ Sempre primeiro
 		base.OnModelCreating(modelBuilder);
 
-		// ======================================================
+		// =============================
 		// Domain Configurations
-		// ======================================================
+		// =============================
+
 		modelBuilder.ApplyConfiguration(new CourseConfiguration());
 		modelBuilder.ApplyConfiguration(new EnrollmentConfiguration());
-		modelBuilder.ApplyConfiguration(new PaymentConfiguration());
 
 		// ⚠️ Student herda IdentityUser
 		// Cuidado para não sobrescrever mapeamento padrão
